@@ -25,8 +25,7 @@ let profileData = {
   ]
 };
 
-app.get('/', (req, res) => res.json({ message: 'Lisa Silayo Portfolio API is running!' }));
-
+app.get('/', (req, res) => res.redirect('/admin.html'));
 app.get('/api/profile', (req, res) => res.json(profileData));
 
 app.put('/api/profile', (req, res) => {
