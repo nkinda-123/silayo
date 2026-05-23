@@ -1,5 +1,4 @@
-const API = 'http://localhost:3000';
-
+const API = 'https://silayo-profile.onrender.com';
 // Smooth scroll
 document.querySelectorAll('a[href^="#"]').forEach(link => {
   link.addEventListener('click', function(e) {
