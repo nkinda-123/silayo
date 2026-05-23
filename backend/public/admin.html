@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel | Lisa Silayo</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'DM Sans',sans-serif; background:#f0f7f0; color:#1b1b1b; }
+    header { background:#1b4332; color:white; padding:20px 40px; display:flex; justify-content:space-between; align-items:center; }
+    header h1 { font-size:1.4rem; }
+    header a { color:#95d5b2; text-decoration:none; font-size:0.9rem; }
+    .container { max-width:900px; margin:40px auto; padding:0 20px; }
+    .card { background:white; border-radius:16px; padding:32px; margin-bottom:28px; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+    .card h2 { color:#1b4332; margin-bottom:20px; font-size:1.2rem; border-bottom:3px solid #95d5b2; padding-bottom:10px; }
+    label { display:block; font-size:0.88rem; color:#555; margin-bottom:6px; margin-top:14px; }
+    input, textarea { width:100%; padding:10px 14px; border:1px solid #ddd; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.95rem; }
+    textarea { height:80px; resize:vertical; }
+    .btn { padding:10px 24px; border:none; border-radius:8px; cursor:pointer; font-size:0.9rem; font-family:'DM Sans',sans-serif; margin-top:16px; }
+    .btn-green { background:#2d6a4f; color:white; }
+    .btn-green:hover { background:#1b4332; }
+    .btn-red { background:#e63946; color:white; font-size:0.8rem; padding:6px 14px; margin-top:0; border:none; border-radius:6px; cursor:pointer; }
+    .tag { display:inline-flex; align-items:center; gap:8px; background:#d8f3dc; color:#1b4332; padding:6px 14px; border-radius:20px; margin:4px; font-size:0.88rem; }
+    .project-item { background:#f9f9f9; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    .project-item p { font-size:0.85rem; color:#666; margin-top:4px; }
+    .project-item strong { color:#1b4332; }
+    .msg { padding:10px 16px; border-radius:8px; margin-top:12px; font-size:0.9rem; display:none; }
+    .msg.success { background:#d8f3dc; color:#1b4332; display:block; }
+    .msg.error { background:#fde8e8; color:#c1121f; display:block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🛠️ Admin Panel — Lisa Silayo</h1>
+  <a href="/">← Back to API</a>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>✏️ Edit Profile</h2>
+    <label>Full Name</label><input type="text" id="p-name"/>
+    <label>Job Title</label><input type="text" id="p-title"/>
+    <label>Email</label><input type="email" id="p-email"/>
+    <label>Phone</label><input type="text" id="p-phone"/>
+    <label>Bio</label><textarea id="p-bio"></textarea>
+    <button class="btn btn-green" onclick="updateProfile()">Save Changes</button>
+    <div id="profile-msg" class="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🧩 Manage Skills</h2>
+    <div id="skills-list"></div>
+    <label style="margin-top:20px">Add New Skill</label>
+    <input type="text" id="new-skill" placeholder="e.g. Sewing"/>
+    <button class="btn btn-green" onclick="addSkill()">Add Skill</button>
+    <div id="skills-msg" class="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>📁 Manage Projects</h2>
+    <div id="projects-list"></div>
+    <h3 style="margin-top:24px;color:#2d6a4f;font-size:1rem;">Add New Project</h3>
+    <label>Tag</label><input type="text" id="new-tag" placeholder="e.g. Fashion Design"/>
+    <label>Title</label><input type="text" id="new-proj-title" placeholder="Project Title"/>
+    <label>Description</label><textarea id="new-proj-desc" placeholder="Project description..."></textarea>
+    <button class="btn btn-green" onclick="addProject()">Add Project</button>
+    <div id="projects-msg" class="msg"></div>
+  </div>
+
+</div>
+
+<script>
+  const API = 'http://localhost:3000';
+
+  async function loadData() {
+    const res = await fetch(`${API}/api/profile`);
+    const data = await res.json();
+    document.getElementById('p-name').value = data.name || '';
+    document.getElementById('p-title').value = data.title || '';
+    document.getElementById('p-email').value = data.email || '';
+    document.getElementById('p-phone').value = data.phone || '';
+    document.getElementById('p-bio').value = data.bio || '';
+
+    document.getElementById('skills-list').innerHTML = data.skills.map(s => `
+      <span class="tag">${s}
+        <button style="background:none;border:none;cursor:pointer;color:#e63946;font-size:1rem;" onclick="deleteSkill('${s}')">✕</button>
+      </span>`).join('');
+
+    document.getElementById('projects-list').innerHTML = data.projects.map(p => `
+      <div class="project-item">
+        <div><strong>${p.title}</strong><p>${p.tag} — ${p.description}</p></div>
+        <button class="btn-red" onclick="deleteProject(${p.id})">Delete</button>
+      </div>`).join('');
+  }
+
+  function showMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = `msg ${type}`;
+    setTimeout(() => el.className = 'msg', 3000);
+  }
+
+  async function updateProfile() {
+    const body = {
+      name: document.getElementById('p-name').value,
+      title: document.getElementById('p-title').value,
+      email: document.getElementById('p-email').value,
+      phone: document.getElementById('p-phone').value,
+      bio: document.getElementById('p-bio').value
+    };
+    const res = await fetch(`${API}/api/profile`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const data = await res.json();
+    showMsg('profile-msg', data.success ? '✅ Profile updated!' : '❌ Error', data.success ? 'success' : 'error');
+  }
+
+  async function addSkill() {
+    const skill = document.getElementById('new-skill').value.trim();
+    if (!skill) return;
+    const res = await fetch(`${API}/api/skills`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ skill }) });
+    const data = await res.json();
+    if (data.success) { showMsg('skills-msg', '✅ Skill added!', 'success'); document.getElementById('new-skill').value = ''; loadData(); }
+  }
+
+  async function deleteSkill(skill) {
+    await fetch(`${API}/api/skills/${encodeURIComponent(skill)}`, { method:'DELETE' });
+    loadData();
+  }
+
+  async function addProject() {
+    const body = {
+      tag: document.getElementById('new-tag').value.trim(),
+      title: document.getElementById('new-proj-title').value.trim(),
+      description: document.getElementById('new-proj-desc').value.trim()
+    };
+    if (!body.tag || !body.title || !body.description) return showMsg('projects-msg', '❌ All fields required', 'error');
+    const res = await fetch(`${API}/api/projects`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const data = await res.json();
+    if (data.success) { showMsg('projects-msg', '✅ Project added!', 'success'); loadData(); }
+  }
+
+  async function deleteProject(id) {
+    await fetch(`${API}/api/projects/${id}`, { method:'DELETE' });
+    loadData();
+  }
+
+  loadData();
+</script>
+</body>
+</html>
